@@ -133,10 +133,14 @@ kubectl apply -f src/kubernetes/kafka/kafka.yaml
 ```
 3. Разверните базу данных:
 ```bash
+kubectl apply -f src/kubernetes/configmap.yaml
+kubectl apply -f src/kubernetes/secret.yaml
+kubectl apply -f src/kubernetes/postgres-init-configmap.yaml 
 kubectl apply -f src/kubernetes/postgres.yaml
 ```
 4. Разверните монолит:
 ```bash
+kubectl apply -f src/kubernetes/dockerconfigsecret.yaml
 kubectl apply -f src/kubernetes/monolith.yaml
 ```
 5.Разверните микросервисы:
