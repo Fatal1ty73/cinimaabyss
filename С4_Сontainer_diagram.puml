@@ -1,0 +1,97 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+Person(user, "Пользователь", "Использует веб, мобильное приложение или Smart TV")
+
+System_Ext(recsys, "Recommendation System", "Сторонняя система рекомендаций")
+System_Ext(content_partners, "Content Providers", "Сторонние стриминговые сервисы и открытые источники контента")
+System_Ext(loyalty_partners, "Loyalty Services", "Партнерские программы лояльности")
+System_Ext(marketplaces, "Marketplaces", "Внешние маркетплейсы и промо-каналы")
+System_Ext(payment_providers, "Payment Providers", "Внешние платёжные системы")
+
+System_Boundary(cinema, "КиноБездна") {
+
+  Container(proxy, "Proxy", "Go REST Gateway",  "Единая внешняя точка входа вместо монолита. Маршрутизация запросов, auth, rate limiting, versioning")
+
+  Container(web_bff, "Web BFF", "Go REST",  "Адаптирует ответы под web-клиент")
+  Container(mobile_bff, "Mobile BFF", "Go REST",  "Возвращает облегчённые DTO для мобильных клиентов")
+  Container(tv_bff, "TV BFF", "Go REST",  "Формирует компактные ответы и сценарии для Smart TV")
+
+  Container(identity, "Identity Service", "Go REST",  "Пользователи, аутентификация, профили")
+  Container(movies, "Movies Service", "Go REST",  "Метаданные о фильмах: карточки, жанры, актёры, описания, атрибуты контента")
+  Container(engagement, "Engagement Service", "Go REST",  "Оценки фильмов, избранное")
+  Container(subscription, "Subscription Service", "Go REST",  "Подписки, скидки, права доступа")
+  Container(billing, "Billing Service", "Go REST",  "Платежи и статусы операций")
+  Container(playback, "Playback Service", "Go REST",  "Подготавливает доступ к просмотру и выдаёт данные для старта проигрывания")
+  Container(recommendation_adapter, "Recommendation Adapter", "Go REST + async client",  "Изолирует интеграцию со сторонней рекомендательной системой и кэширует подборки")
+  Container(partner_integration, "Partner Integration Service", "Go REST",  "Интеграция с поставщиками контента, loyalty-сервисами и маркетплейсами")
+  Container(message_broker, "RabbitMQ", "Message broker",  "Асинхронный обмен сообщениями с внешней рекомендательной системой")
+
+  ContainerDb(postgres, "PostgreSQL", "Single cluster, separate schemas",  "Переходный этап декомпозиции монолита: одна БД, но логическое владение данными разделено по схемам сервисов")
+  ContainerDb(media_storage, "Media Storage", "S3-compatible object storage",  "Собственное хранилище фильмов, постеров и связанных медиа-объектов")
+
+  Container(cache, "Redis", "Cache",  "Кэш рекомендаций, availability, сессий и часто запрашиваемых данных")
+}
+
+Rel(user, proxy, "HTTPS/REST")
+
+Rel(proxy, web_bff, "Маршрутизация для Web")
+Rel(proxy, mobile_bff, "Маршрутизация для Mobile")
+Rel(proxy, tv_bff, "Маршрутизация для Smart TV")
+
+Rel(web_bff, identity, "REST")
+Rel(web_bff, movies, "REST")
+Rel(web_bff, engagement, "REST")
+Rel(web_bff, subscription, "REST")
+Rel(web_bff, billing, "REST")
+Rel(web_bff, playback, "REST")
+Rel(web_bff, recommendation_adapter, "REST")
+Rel(web_bff, partner_integration, "REST")
+
+Rel(mobile_bff, identity, "REST")
+Rel(mobile_bff, movies, "REST")
+Rel(mobile_bff, engagement, "REST")
+Rel(mobile_bff, subscription, "REST")
+Rel(mobile_bff, billing, "REST")
+Rel(mobile_bff, playback, "REST")
+Rel(mobile_bff, recommendation_adapter, "REST")
+Rel(mobile_bff, partner_integration, "REST")
+
+Rel(tv_bff, identity, "REST")
+Rel(tv_bff, movies, "REST")
+Rel(tv_bff, engagement, "REST")
+Rel(tv_bff, subscription, "REST")
+Rel(tv_bff, billing, "REST")
+Rel(tv_bff, playback, "REST")
+Rel(tv_bff, recommendation_adapter, "REST")
+Rel(tv_bff, partner_integration, "REST")
+
+Rel(subscription, billing, "Синхронный REST для активации подписки после оплаты")
+Rel(playback, subscription, "Синхронный REST для проверки права просмотра")
+Rel(engagement, movies, "Синхронный REST для проверки фильма")
+Rel(playback, partner_integration, "Синхронный REST для получения внешнего playback/access endpoint")
+Rel(playback, media_storage, "Получает ссылки и метаданные для воспроизведения собственного контента")
+Rel(movies, media_storage, "Читает данные о собственных фильмах, постерах и медиа-объектах")
+
+Rel(recommendation_adapter, message_broker, "Publishes/consumes recommendation messages")
+Rel(recsys, message_broker, "Publishes/consumes recommendation messages")
+Rel(partner_integration, content_partners, "REST/partner APIs")
+Rel(partner_integration, loyalty_partners, "REST/partner APIs")
+Rel(partner_integration, marketplaces, "REST/partner APIs")
+Rel(billing, payment_providers, "REST/partner APIs")
+
+Rel(recommendation_adapter, cache, "Кэширует подборки")
+Rel(movies, cache, "Кэширует популярные карточки")
+Rel(partner_integration, cache, "Кэширует availability и партнерские данные")
+
+Rel(identity, postgres, "Владеет своей схемой")
+Rel(movies, postgres, "Владеет своей схемой")
+Rel(engagement, postgres, "Владеет своей схемой")
+Rel(subscription, postgres, "Владеет своей схемой")
+Rel(billing, postgres, "Владеет своей схемой")
+Rel(playback, postgres, "Владеет своей схемой")
+Rel(partner_integration, postgres, "Владеет своей схемой")
+
+@enduml
