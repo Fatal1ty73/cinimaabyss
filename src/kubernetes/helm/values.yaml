@@ -34,7 +34,7 @@ database:
 monolith:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/monolith
+    repository: ghcr.io/fatal1ty73/cinimaabyss/monolith
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -54,7 +54,7 @@ monolith:
 proxyService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/proxy-service
+    repository: ghcr.io/fatal1ty73/cinimaabyss/proxy-service
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -74,7 +74,7 @@ proxyService:
 moviesService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/movies-service
+    repository: ghcr.io/fatal1ty73/cinimaabyss/movies-service
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -94,7 +94,7 @@ moviesService:
 eventsService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/events-service
+    repository: ghcr.io/fatal1ty73/cinimaabyss/events-service
     tag: latest
     pullPolicy: Always
   replicas: 1
